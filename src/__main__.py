@@ -2,7 +2,7 @@ from llm_sdk import Small_LLM_Model
 
 model = Small_LLM_Model()
 
-prompt = "What is the sum of 40 and 2?:"
+prompt = "waddup"
 input_ids = model.encode(prompt)[0].tolist()
 
 for _ in range(10):

@@ -1,5 +1,5 @@
 [project]
-name = "main"
+name = "call_me_maybe"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
@@ -24,3 +24,8 @@ members = [
 
 [tool.uv.sources]
 llm-sdk = { workspace = true }
+
+[tool.mypy]
+exclude = [
+    "llm_sdk/",
+]
