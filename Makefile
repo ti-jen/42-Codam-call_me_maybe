@@ -1,11 +1,11 @@
 PYTHON = python3
 VENV = .venv
-MAIN = main.py
+MAIN = src
 
 .PHONY: install run debug clean lint lint-strict
 
 run:
-	$(PYTHON) $(MAIN) $(MAP)
+	uv run $(PYTHON) -m $(MAIN)
 
 debug:
 	$(PYTHON) -m pdb $(MAIN) $(MAP)
