@@ -1,7 +1,7 @@
 import argparse
 from .customFunction import create_def_func_list, create_cal_func_list
 from .customFunction import LLmcustom
-from llm_sdk import Small_LLM_Model
+import json
 
 
 def parser_data() -> argparse.Namespace:
@@ -21,9 +21,8 @@ def parser_data() -> argparse.Namespace:
     return parser.parse_args()
 
 
-
-
 def main() -> None:
+    output = []
     try:
         parser = parser_data()
         cal_func = create_cal_func_list(parser.input)
@@ -33,8 +32,13 @@ def main() -> None:
         exit()
     model = LLmcustom(func_def=def_func)
     for x in cal_func:
-        model.out(x)
+        print(x.promt)
+        res = model.get_ouput(x)
+        print(res)
+        output.append(res)
 
+    with open(parser.output, "w") as f:
+        json.dump([x.model_dump(mode="json") for x in output], f, indent=4)
 
 
 if __name__ == "__main__":

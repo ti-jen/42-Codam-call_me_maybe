@@ -44,8 +44,8 @@ class DefinedFunction(BaseModel):
         return self
 
 
-def create_def_func_list(s: str) -> list[DefinedFunction]:
-    def_func = []
+def create_def_func_list(s: str) -> dict[str, DefinedFunction]:
+    def_func = {}
     try:
         with open(s, "r") as f:
             try:
@@ -62,11 +62,11 @@ def create_def_func_list(s: str) -> list[DefinedFunction]:
         raise ValueError("function_define list is empty")
     for x in func:
         try:
-            def_func.append(DefinedFunction(name=x["name"],
-                                            description=x["description"],
-                                            parameters=x["parameters"],
-                                            returns=x["returns"]
-                                            ))
+            def_func[x["name"]] = DefinedFunction(name=x["name"],
+                                                  description=x["description"],
+                                                  parameters=x["parameters"],
+                                                  returns=x["returns"]
+                                                  )
         except KeyError as e:
             raise KeyError(f"missing key={e} got: '{x}'")
 
