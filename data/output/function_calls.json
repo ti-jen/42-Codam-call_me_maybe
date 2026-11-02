@@ -4,7 +4,7 @@
         "name": "fn_add_numbers",
         "parameters": {
             "a": "2",
-            "b": "3"
+            "b": "3?"
         }
     },
     {
@@ -12,7 +12,7 @@
         "name": "fn_add_numbers",
         "parameters": {
             "a": "265",
-            "b": "345"
+            "b": "345?"
         }
     },
     {
@@ -23,10 +23,10 @@
         }
     },
     {
-        "prompt": "Greet john",
+        "prompt": "Greet super",
         "name": "fn_greet",
         "parameters": {
-            "name": "john"
+            "name": "super"
         }
     },
     {
@@ -47,7 +47,7 @@
         "prompt": "What is the square root of 16?",
         "name": "fn_get_square_root",
         "parameters": {
-            "a": "16"
+            "a": "16?"
         }
     },
     {
@@ -61,8 +61,8 @@
         "prompt": "Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS",
         "name": "fn_substitute_string_with_regex",
         "parameters": {
-            "source_string": "Hello 34 I'm 233 years old",
-            "regex": "numbers",
+            "source_string": "Hello 34 Im 233 years old",
+            "regex": "([0123456789])",
             "replacement": "NUMBERS"
         }
     },
@@ -71,8 +71,8 @@
         "name": "fn_substitute_string_with_regex",
         "parameters": {
             "source_string": "Programming is fun",
-            "regex": "al",
-            "replacement": "asterisk"
+            "regex": "([aeiouAEIOU])",
+            "replacement": "*"
         }
     },
     {

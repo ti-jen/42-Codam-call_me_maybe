@@ -32,11 +32,10 @@ def main() -> None:
         exit()
     model = LLmcustom(func_def=def_func)
     for x in cal_func:
-        print(x.promt)
         res = model.get_ouput(x)
-        print(res)
         output.append(res)
 
+    print(f"exporting output to: {parser.output}")
     with open(parser.output, "w") as f:
         json.dump([x.model_dump(mode="json") for x in output], f, indent=4)
 

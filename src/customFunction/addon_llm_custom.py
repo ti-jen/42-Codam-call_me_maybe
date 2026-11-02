@@ -2,6 +2,26 @@ from pydantic import BaseModel, ConfigDict
 from .json_convert import DefinedFunction, CallingFunction
 from llm_sdk import Small_LLM_Model
 from typing import Any
+import time
+import threading
+import re
+
+additions = {
+    "asterisks": ["*"],
+    "exclamation": ["!"],
+    "question": ["?"],
+    "brackets": ["(", ")", "[", "]"],
+    "quotation": ['"', "'"],
+    "commas": [","],
+    "periods": [".", "..."],
+    "colons": [":", ";"],
+    "dashes": ["-", "--", "—"],
+    "symbols": ["@", "#", "$", "%", "&"],
+    "arrows": ["->", "<-", "=>"],
+    "maths": ["+", "=", "/", "\\"],
+    "vowels": ["([aeiouAEIOU])"],
+    "numbers": ["([0123456789])"]
+}
 
 
 class OutputFunction(BaseModel):
@@ -18,24 +38,41 @@ def is_float(str: str) -> bool:
         return False
 
 
+def split_line(str: str) -> list[str]:
+    base = str.split()
+    resultA = re.findall(r'"(.*?)"', str)
+    resultB = re.findall(r"'(.*?)'", str)
+    base.extend(resultA)
+    base.extend(resultB)
+    for x in "'\"":
+        for p in range(len(base)):
+            base[p] = base[p].replace(x, "")
+    base = list(dict.fromkeys(base))
+    for item in base:
+        if item in additions:
+            base.extend(additions[item])
+    return base
+
+
 class LLmcustom(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     func_def: dict[str, DefinedFunction]
     model: Small_LLM_Model = Small_LLM_Model()
+    loading: bool = True
+
+    def spinner(self, text: str) -> None:
+        while self.loading:
+            for frame in ["|", "/", "-", "\\"]:
+                print(f"\r{frame} {text}", end="\r", flush=True)
+                time.sleep(0.1)
 
     def get_func(self, promt: CallingFunction) -> str:
-        des = """
-        You are a function selector.
-        Select the single function that best matches the user's request.
-
-        Use the function descriptions to determine the intended action.
-        Return only the selected function name.
-        """
-        des += f"user:{promt}\n"
+        des = f"user's request={promt.promt}\n"
+        des += "function options:\n"
         for x in self.func_def:
             des += (f"function_name={self.func_def[x].name}, "
-                    "function_description={self.func_def[x].description}\n")
-        des += "answer:\n"
+                    f"function_description={self.func_def[x].description}\n")
+        des += "the single function that best matches the user's request="
 
         input_ids = self.model.encode(des)[0].tolist()
         anwser: list[int] = []
@@ -49,7 +86,7 @@ class LLmcustom(BaseModel):
                 if self.func_def[p].name.startswith(self.model.decode(test)):
                     valid = True
                     break
-            if len(self.model.decode(next_id)) == 0:
+            if self.model.decode(next_id) == "\n":
                 break
             if not valid:
                 logits[next_id] = float('-inf')
@@ -64,16 +101,17 @@ class LLmcustom(BaseModel):
     def get_par(self, promt: CallingFunction,
                 func: DefinedFunction) -> dict[str, str]:
         result = {}
+        options = split_line(promt.promt)
         des = f"user's request={promt.promt}\n"
         des += (f"function used for request={func.name}, "
                 f"function description={func.description}\n")
         des += "format paramter:\n"
         for p in func.parameters:
-            des += (f"parameter {p} "
-                    f"input=<{func.parameters[p]["type"].value}>, ")
+            des += (f"parameter_{p}_"
+                    f"input=<single input that best matches the request>\n")
         des += "input paramter:\n"
         for x in func.parameters:
-            des += f"parameter {x} input="
+            des += f"parameter_{x}_input="
             anwser: list[int] = []
             input_ids = self.model.encode(des)[0].tolist()
             logits = self.model.get_logits_from_input_ids(input_ids)
@@ -82,26 +120,51 @@ class LLmcustom(BaseModel):
                 test = anwser.copy()
                 test.append(next_id)
                 if (len(anwser) != 0 and
-                        self.model.decode(next_id) == ","):
+                        "\n" in self.model.decode(next_id)):
                     break
-                if (self.model.decode(test) in promt.promt and
-                    (func.parameters[p]["type"].value == "number" and
-                     is_float(self.model.decode(test)) or
-                    ((func.parameters[p]["type"].value == "string" and
-                      not is_float(self.model.decode(test))))
-                        and not self.model.decode(test).startswith(" "))):
+                valid = [word for word in options if
+                         word.startswith(self.model.decode(test))]
+                if (valid and
+                    ((func.parameters[x]["type"].value == "number" and
+                      is_float(self.model.decode(test))
+                      ) or
+                     (func.parameters[x]["type"].value == "string" and not
+                     is_float(self.model.decode(test))
+                      )
+                     )):
                     input_ids.append(next_id)
                     anwser.append(next_id)
                     logits = self.model.get_logits_from_input_ids(input_ids)
+                    if len(valid) == 1:
+                        break
                 else:
                     logits[next_id] = float('-inf')
-            result[x] = self.model.decode(anwser)
-            des += f"{self.model.decode(anwser)}, "
+            if len(valid) == 1:
+                result[x] = valid[0]
+                des += f"{valid[0]}\n"
+            else:
+                result[x] = self.model.decode(anwser)
+                des += f"{self.model.decode(anwser)}\n"
         return result
 
     def get_ouput(self, promt: CallingFunction) -> OutputFunction:
+        print(f"\033[33m[{promt.promt}]\033[0m")
+        self.loading = True
+        thread = threading.Thread(target=self.spinner,
+                                  args=("choosing function...",))
+        thread.start()
         func = self.get_func(promt)
+        self.loading = False
+        thread.join()
+        print(f"function: {func}    ")
+        self.loading = True
+        thread = threading.Thread(target=self.spinner,
+                                  args=("choosing parameters...",))
+        thread.start()
         parm = self.get_par(promt, self.func_def[func])
+        self.loading = False
+        thread.join()
+        print(f"parameters: {parm}\n")
         return OutputFunction(prompt=promt.promt,
                               name=func,
                               parameters=parm)
