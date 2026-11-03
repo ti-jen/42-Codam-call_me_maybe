@@ -24,6 +24,7 @@ class DefinedFunction(BaseModel):
 
     @model_validator(mode="after")
     def validate_dict(self) -> Self:
+        "checks if the items are up to the standard input"
         for x in self.parameters:
             if len(self.parameters[x]) != 1:
                 raise ValueError(f"wrong amount of parameter arguments in {x}",
@@ -43,6 +44,8 @@ class DefinedFunction(BaseModel):
 
 
 def create_def_func_list(s: str) -> dict[str, DefinedFunction]:
+    """creates the list for the definition function
+    raise a error if the input is incorret"""
     def_func = {}
     try:
         with open(s, "r") as f:
@@ -72,6 +75,8 @@ def create_def_func_list(s: str) -> dict[str, DefinedFunction]:
 
 
 def create_cal_func_list(s: str) -> list[CallingFunction]:
+    """creates the list for the calling functions
+    raise a error if the input is incorret"""
     cal_func = []
     try:
         with open(s, "r") as f:

@@ -1,6 +1,6 @@
+from llm_sdk import Small_LLM_Model  # type: ignore[attr-defined]
 from pydantic import BaseModel, ConfigDict
 from .json_convert import DefinedFunction, CallingFunction
-from llm_sdk import Small_LLM_Model
 from typing import Any
 import time
 import threading
@@ -27,6 +27,7 @@ class OutputFunction(BaseModel):
 
 
 def is_float(str: str) -> bool:
+    "checks if the str is a float value and returns a bool"
     try:
         float(str)
         return True
@@ -35,6 +36,7 @@ def is_float(str: str) -> bool:
 
 
 def split_line(str: str) -> list[str]:
+    "splits the line in a list that the llm can choose from as  the paramter"
     base = str.split()
     resultA = re.findall(r'"(.*?)"', str)
     resultB = re.findall(r"'(.*?)'", str)
@@ -59,12 +61,15 @@ class LLmcustom(BaseModel):
     loading: bool = True
 
     def spinner(self, text: str) -> None:
+        """imports a str and makes it a loading text
+        with a spinning line at the start"""
         while self.loading:
             for frame in ["|", "/", "-", "\\"]:
                 print(f"\r{frame} {text}", end="\r", flush=True)
                 time.sleep(0.1)
 
     def get_func(self, promt: CallingFunction) -> str:
+        "gets the function name for the givin promt"
         des = f"user's request={promt.promt}\n"
         des += "function options:\n"
         for x in self.func_def:
@@ -98,6 +103,7 @@ class LLmcustom(BaseModel):
 
     def get_par(self, promt: CallingFunction,
                 func: DefinedFunction) -> dict[str, str]:
+        "gets the paramter inputs for the givin promt and funcion"
         result: dict[str, Any] = {}
         options = split_line(promt.promt)
         des = f"user's request={promt.promt}\n"
@@ -159,6 +165,7 @@ class LLmcustom(BaseModel):
         return result
 
     def get_ouput(self, promt: CallingFunction) -> OutputFunction:
+        "generates the promt and paramters with the giving visuals"
         print(f"\033[33m[{promt.promt}]\033[0m")
         self.loading = True
         thread = threading.Thread(target=self.spinner,

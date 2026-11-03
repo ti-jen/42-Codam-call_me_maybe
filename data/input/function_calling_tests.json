@@ -9,7 +9,7 @@
     "prompt": "Greet shrek"
   },
   {
-    "prompt": "Greet super"
+    "prompt": "Greet peter"
   },
   {
     "prompt": "Reverse the string 'hello'"
@@ -33,6 +33,6 @@
     "prompt": "Substitute the word 'cat' with 'dog' in 'The cat sat on the mat with another cat'"
   },
   {
-    "prompt": "change all upper cases in 'Programming is fun' with asterisks"
+    "prompt": "change all uppercases in 'Programming is fun' with asterisks"
   }
 ]

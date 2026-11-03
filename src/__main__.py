@@ -1,10 +1,12 @@
 import argparse
-from .customFunction import create_def_func_list, create_cal_func_list
-from .customFunction import LLmcustom
+from src.customFunction import (create_def_func_list,
+                                create_cal_func_list,
+                                LLmcustom)
 import json
 
 
 def parser_data() -> argparse.Namespace:
+    "checks for flags returns default if no flags were used"
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--functions_definition",
@@ -22,6 +24,7 @@ def parser_data() -> argparse.Namespace:
 
 
 def main() -> None:
+    "runs the whole programm"
     output = []
     try:
         parser = parser_data()
