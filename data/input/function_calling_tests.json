@@ -1,6 +1,6 @@
 [
   {
-    "prompt": "What is the sum of 2 and 3?"
+    "prompt": "what is the captial of france"
   },
   {
     "prompt": "What is the sum of 265 and 345?"
@@ -31,5 +31,8 @@
   },
   {
     "prompt": "Substitute the word 'cat' with 'dog' in 'The cat sat on the mat with another cat'"
+  },
+  {
+    "prompt": "change all upper cases in 'Programming is fun' with asterisks"
   }
 ]

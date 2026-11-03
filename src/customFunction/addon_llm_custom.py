@@ -6,22 +6,18 @@ import time
 import threading
 import re
 
-additions = {
-    "asterisks": ["*"],
-    "exclamation": ["!"],
-    "question": ["?"],
-    "brackets": ["(", ")", "[", "]"],
-    "quotation": ['"', "'"],
-    "commas": [","],
-    "periods": [".", "..."],
-    "colons": [":", ";"],
-    "dashes": ["-", "--", "—"],
-    "symbols": ["@", "#", "$", "%", "&"],
-    "arrows": ["->", "<-", "=>"],
-    "maths": ["+", "=", "/", "\\"],
-    "vowels": ["([aeiouAEIOU])"],
-    "numbers": ["([0123456789])"]
-}
+additions = [
+    (['asterisks'], '*'),
+    (['"question"'], '?'),
+    (['exclamation'], '!'),
+    (['dashes, dash'], '-'),
+    (['colons, colon'], ':'),
+    (['vowel', 'vowels'], '([aeiouAEIOU])'),
+    (['numb', 'number', 'numbers'], '([0123456789])'),
+    (['char', 'character', 'characters', 'letters'], '([a-zA-Z])'),
+    (['uppercase', 'uppercases', 'upper'], '([A-Z])'),
+    (['lowercase', 'lowercases', 'lower'], '([a-z])'),
+]
 
 
 class OutputFunction(BaseModel):
@@ -42,16 +38,18 @@ def split_line(str: str) -> list[str]:
     base = str.split()
     resultA = re.findall(r'"(.*?)"', str)
     resultB = re.findall(r"'(.*?)'", str)
+    numbers = re.findall(r'-?\d*\.?\d+', str)
     base.extend(resultA)
     base.extend(resultB)
+    base.extend(numbers)
     for x in "'\"":
         for p in range(len(base)):
             base[p] = base[p].replace(x, "")
-    base = list(dict.fromkeys(base))
-    for item in base:
-        if item in additions:
-            base.extend(additions[item])
-    return base
+    for keywords, patern in additions:
+        for keyword in keywords:
+            if keyword in base:
+                base.append(patern)
+    return list(dict.fromkeys(base))
 
 
 class LLmcustom(BaseModel):
@@ -100,7 +98,7 @@ class LLmcustom(BaseModel):
 
     def get_par(self, promt: CallingFunction,
                 func: DefinedFunction) -> dict[str, str]:
-        result = {}
+        result: dict[str, Any] = {}
         options = split_line(promt.promt)
         des = f"user's request={promt.promt}\n"
         des += (f"function used for request={func.name}, "
@@ -115,7 +113,8 @@ class LLmcustom(BaseModel):
             anwser: list[int] = []
             input_ids = self.model.encode(des)[0].tolist()
             logits = self.model.get_logits_from_input_ids(input_ids)
-            while 1:
+            wrongs = 0
+            while wrongs < 500:
                 next_id = max(range(len(logits)), key=lambda i: logits[i])
                 test = anwser.copy()
                 test.append(next_id)
@@ -139,11 +138,23 @@ class LLmcustom(BaseModel):
                         break
                 else:
                     logits[next_id] = float('-inf')
-            if len(valid) == 1:
-                result[x] = valid[0]
+                    wrongs += 1
+            if wrongs >= 500:
+                result[x] = None
+                des += "None\n"
+            elif len(valid) == 1:
+                if (is_float(valid[0]) and
+                   func.parameters[x]["type"].value == "number"):
+                    result[x] = float(valid[0])
+                else:
+                    result[x] = valid[0]
                 des += f"{valid[0]}\n"
             else:
-                result[x] = self.model.decode(anwser)
+                if (is_float(self.model.decode(anwser)) and
+                   func.parameters[x]["type"].value == "number"):
+                    result[x] = float(self.model.decode(anwser))
+                else:
+                    result[x] = self.model.decode(anwser)
                 des += f"{self.model.decode(anwser)}\n"
         return result
 
