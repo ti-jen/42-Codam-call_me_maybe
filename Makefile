@@ -4,11 +4,14 @@ MAIN = src
 
 .PHONY: install run debug clean lint lint-strict
 
+install:
+	uv sync
+
 run:
 	uv run $(PYTHON) -m $(MAIN)
 
 debug:
-	$(PYTHON) -m pdb $(MAIN) $(MAP)
+	uv run $(PYTHON) -m  pdb $(MAIN)
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
