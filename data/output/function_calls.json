@@ -1,6 +1,6 @@
 [
     {
-        "prompt": "what is the captial of france",
+        "prompt": "what is the capitla ",
         "name": "fn_add_numbers",
         "parameters": {
             "a": null,
@@ -23,10 +23,10 @@
         }
     },
     {
-        "prompt": "Greet peter",
+        "prompt": "Greet super",
         "name": "fn_greet",
         "parameters": {
-            "name": "peter"
+            "name": "super"
         }
     },
     {
@@ -82,15 +82,6 @@
             "source_string": "The cat sat on the mat with another cat",
             "regex": "cat",
             "replacement": "dog"
-        }
-    },
-    {
-        "prompt": "change all uppercases in 'Programming is fun' with asterisks",
-        "name": "fn_substitute_string_with_regex",
-        "parameters": {
-            "source_string": "Programming is fun",
-            "regex": "([A-Z])",
-            "replacement": "*"
         }
     }
 ]

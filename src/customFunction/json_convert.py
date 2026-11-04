@@ -1,5 +1,5 @@
 from pydantic_core import PydanticCustomError
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, Field
 import json
 from typing import Self
 from enum import Enum
@@ -9,7 +9,6 @@ class ArgType(Enum):
     STRING = "string"
     NUMBER = "number"
     BOOLEAN = "boolean"
-    NULL = "null"
 
 
 class CallingFunction(BaseModel):
@@ -17,7 +16,7 @@ class CallingFunction(BaseModel):
 
 
 class DefinedFunction(BaseModel):
-    name: str
+    name: str = Field(min_length=1)
     description: str
     parameters: dict[str, dict[str, ArgType]]
     returns: dict[str, ArgType]

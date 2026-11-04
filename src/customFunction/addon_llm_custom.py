@@ -68,7 +68,7 @@ class LLmcustom(BaseModel):
                 print(f"\r{frame} {text}", end="\r", flush=True)
                 time.sleep(0.1)
 
-    def get_func(self, promt: CallingFunction) -> str:
+    def get_func(self, promt: CallingFunction) -> str | None:
         "gets the function name for the givin promt"
         des = f"user's request={promt.promt}\n"
         des += "function options:\n"
@@ -80,7 +80,8 @@ class LLmcustom(BaseModel):
         input_ids = self.model.encode(des)[0].tolist()
         anwser: list[int] = []
         logits = self.model.get_logits_from_input_ids(input_ids)
-        while 1:
+        wrongs = 0
+        while wrongs < 500:
             next_id = max(range(len(logits)), key=lambda i: logits[i])
             test = anwser.copy()
             test.append(next_id)
@@ -92,6 +93,7 @@ class LLmcustom(BaseModel):
             if self.model.decode(next_id) == "\n":
                 break
             if not valid:
+                wrongs += 1
                 logits[next_id] = float('-inf')
             else:
                 input_ids.append(next_id)
@@ -99,6 +101,8 @@ class LLmcustom(BaseModel):
                 logits = self.model.get_logits_from_input_ids(input_ids)
             if len(self.model.decode(next_id)) == 0:
                 break
+        if wrongs >= 500:
+            return None
         return str(self.model.decode(anwser))
 
     def get_par(self, promt: CallingFunction,
@@ -134,6 +138,9 @@ class LLmcustom(BaseModel):
                       is_float(self.model.decode(test))
                       ) or
                      (func.parameters[x]["type"].value == "string" and not
+                     is_float(self.model.decode(test))
+                      ) or
+                     (func.parameters[x]["type"].value == "boolean" and not
                      is_float(self.model.decode(test))
                       )
                      )):
@@ -175,6 +182,10 @@ class LLmcustom(BaseModel):
         self.loading = False
         thread.join()
         print(f"function: {func}    ")
+        if func is None:
+            return OutputFunction(prompt=promt.promt,
+                                  name="null",
+                                  parameters={"error": None})
         self.loading = True
         thread = threading.Thread(target=self.spinner,
                                   args=("choosing parameters...",))
