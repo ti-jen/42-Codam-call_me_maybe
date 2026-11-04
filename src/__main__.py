@@ -1,4 +1,5 @@
 import argparse
+import os
 from src.customFunction import (create_def_func_list,
                                 create_cal_func_list,
                                 LLmcustom)
@@ -39,8 +40,13 @@ def main() -> None:
         output.append(res)
 
     print(f"exporting output to: {parser.output}")
-    with open(parser.output, "w") as f:
-        json.dump([x.model_dump(mode="json") for x in output], f, indent=4)
+    try:
+        os.makedirs(os.path.dirname(parser.output), exist_ok=True)
+        with open(parser.output, "w") as f:
+            json.dump([x.model_dump(mode="json") for x in output], f, indent=4)
+    except Exception as e:
+        print(e)
+        exit()
 
 
 if __name__ == "__main__":

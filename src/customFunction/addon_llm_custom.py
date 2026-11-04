@@ -1,6 +1,6 @@
 from llm_sdk import Small_LLM_Model  # type: ignore[attr-defined]
 from pydantic import BaseModel, ConfigDict
-from .json_convert import DefinedFunction, CallingFunction
+from .json_convert import DefinedFunction, CallingFunction, ArgType
 from typing import Any
 import time
 import threading
@@ -12,11 +12,17 @@ additions = [
     (['exclamation'], '!'),
     (['dashes, dash'], '-'),
     (['colons, colon'], ':'),
+    (['dots, dot'], '.'),
     (['vowel', 'vowels'], '([aeiouAEIOU])'),
     (['numb', 'number', 'numbers'], '([0123456789])'),
     (['char', 'character', 'characters', 'letters'], '([a-zA-Z])'),
     (['uppercase', 'uppercases', 'upper'], '([A-Z])'),
     (['lowercase', 'lowercases', 'lower'], '([a-z])'),
+    (['underscores', 'underscore'], '_'),
+    (['consonant', 'consonants'],
+     '([bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ])'),
+    (['punctuation', 'punctuations', 'punctuation marks'],
+     '([!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~])')
 ]
 
 
@@ -28,6 +34,8 @@ class OutputFunction(BaseModel):
 
 def is_float(str: str) -> bool:
     "checks if the str is a float value and returns a bool"
+    if str == "-":
+        return True
     try:
         float(str)
         return True
@@ -37,7 +45,7 @@ def is_float(str: str) -> bool:
 
 def split_line(str: str) -> list[str]:
     "splits the line in a list that the llm can choose from as  the paramter"
-    base = str.split()
+    base = re.split(r'[ ,.]+', str)
     resultA = re.findall(r'"(.*?)"', str)
     resultB = re.findall(r"'(.*?)'", str)
     numbers = re.findall(r'-?\d*\.?\d+', str)
@@ -128,19 +136,22 @@ class LLmcustom(BaseModel):
                 next_id = max(range(len(logits)), key=lambda i: logits[i])
                 test = anwser.copy()
                 test.append(next_id)
-                if (len(anwser) != 0 and
+                if (len(self.model.decode(anwser)) != 0 and
                         "\n" in self.model.decode(next_id)):
                     break
                 valid = [word for word in options if
                          word.startswith(self.model.decode(test))]
                 if (valid and
-                    ((func.parameters[x]["type"].value == "number" and
+                    ((ArgType.NUMBER ==
+                      ArgType(func.parameters[x]["type"].value) and
                       is_float(self.model.decode(test))
                       ) or
-                     (func.parameters[x]["type"].value == "string" and not
+                     (ArgType.STRING ==
+                      ArgType(func.parameters[x]["type"].value) and not
                      is_float(self.model.decode(test))
                       ) or
-                     (func.parameters[x]["type"].value == "boolean" and not
+                     (ArgType.INTEGER ==
+                      ArgType(func.parameters[x]["type"].value) and
                      is_float(self.model.decode(test))
                       )
                      )):
@@ -156,9 +167,12 @@ class LLmcustom(BaseModel):
                 result[x] = None
                 des += "None\n"
             elif len(valid) == 1:
-                if (is_float(valid[0]) and
+                if (is_float(self.model.decode(anwser)) and
                    func.parameters[x]["type"].value == "number"):
                     result[x] = float(valid[0])
+                elif (is_float(valid[0]) and
+                      func.parameters[x]["type"].value == "integer"):
+                    result[x] = int(valid[0])
                 else:
                     result[x] = valid[0]
                 des += f"{valid[0]}\n"
@@ -166,6 +180,9 @@ class LLmcustom(BaseModel):
                 if (is_float(self.model.decode(anwser)) and
                    func.parameters[x]["type"].value == "number"):
                     result[x] = float(self.model.decode(anwser))
+                elif (is_float(self.model.decode(anwser)) and
+                      func.parameters[x]["type"].value == "integer"):
+                    result[x] = int(self.model.decode(anwser))
                 else:
                     result[x] = self.model.decode(anwser)
                 des += f"{self.model.decode(anwser)}\n"
@@ -181,7 +198,7 @@ class LLmcustom(BaseModel):
         func = self.get_func(promt)
         self.loading = False
         thread.join()
-        print(f"function: {func}    ")
+        print(f"function: {func}            ")
         if func is None:
             return OutputFunction(prompt=promt.promt,
                                   name="null",
@@ -193,7 +210,7 @@ class LLmcustom(BaseModel):
         parm = self.get_par(promt, self.func_def[func])
         self.loading = False
         thread.join()
-        print(f"parameters: {parm}\n")
+        print(f"parameters: {parm}          \n")
         return OutputFunction(prompt=promt.promt,
                               name=func,
                               parameters=parm)

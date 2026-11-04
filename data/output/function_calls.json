@@ -1,10 +1,10 @@
 [
     {
-        "prompt": "what is the capitla ",
+        "prompt": "What is the sum of 2 and 3?",
         "name": "fn_add_numbers",
         "parameters": {
-            "a": null,
-            "b": null
+            "a": 2.0,
+            "b": 3.0
         }
     },
     {
@@ -23,10 +23,10 @@
         }
     },
     {
-        "prompt": "Greet super",
+        "prompt": "Greet john,",
         "name": "fn_greet",
         "parameters": {
-            "name": "super"
+            "name": "john"
         }
     },
     {

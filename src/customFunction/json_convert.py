@@ -1,14 +1,21 @@
 from pydantic_core import PydanticCustomError
 from pydantic import BaseModel, model_validator, Field
 import json
-from typing import Self
+from typing import Self, Any
 from enum import Enum
 
 
 class ArgType(Enum):
     STRING = "string"
     NUMBER = "number"
-    BOOLEAN = "boolean"
+    INTEGER = "integer"
+
+    @classmethod
+    def _missing_(cls, value: object) -> Any:
+        if value == "str":
+            return cls.STRING
+        if value == "boolean":
+            return cls.STRING
 
 
 class CallingFunction(BaseModel):

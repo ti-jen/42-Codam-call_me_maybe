@@ -29,4 +29,5 @@ llm-sdk = { workspace = true }
 explicit_package_bases = true
 exclude = [
     "llm_sdk/",
+    "moulinette/",
 ]
