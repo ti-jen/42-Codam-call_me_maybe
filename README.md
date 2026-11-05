@@ -44,6 +44,7 @@ the next token.
 ```bash
 make install     # uv sync: creates the virtual environment, installs dependencies
 make run         # runs the program with the default paths
+make test        # runs the program with the test paths for moullinette
 make debug       # runs the program under pdb
 make lint        # flake8 + mypy with the flags required by the subject
 make lint-strict # flake8 + mypy --strict (optional)
@@ -95,9 +96,9 @@ For each parameter of the chosen function:
    decisions).
 2. The model generates the value token by token. A token is accepted only if the
    text so far is a prefix of a candidate and matches the parameter type
-   (`number` or `string`).
+   (`number`  ,`string`, `boolean` or `inteteger`).
 3. When exactly one candidate remains, it is used. Numbers are converted to
-   `float`.
+   `float` or `inteteger`.
 4. If too many tokens are rejected in a row (500), the parameter is set to
    `None`.
 
