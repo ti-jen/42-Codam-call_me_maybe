@@ -11,7 +11,7 @@ run:
 	uv run $(PYTHON) -m $(MAIN)
 
 debug:
-	uv run $(PYTHON) -m  pdb $(MAIN)
+	uv run $(PYTHON) -m  pdb -m $(MAIN)
 
 test:
 	uv run $(PYTHON) -m $(MAIN) --functions_definition moulinette/data/input/functions_definition.json --input moulinette/data/input/function_calling_tests.json
