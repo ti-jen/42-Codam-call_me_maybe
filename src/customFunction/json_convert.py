@@ -12,10 +12,13 @@ class ArgType(Enum):
 
     @classmethod
     def _missing_(cls, value: object) -> Any:
-        if value == "str":
-            return cls.STRING
-        if value == "boolean":
-            return cls.STRING
+        aliases = {
+            "str": cls.STRING,
+            "boolean": cls.STRING,
+            "list": cls.STRING,
+            "int": cls.INTEGER,
+        }
+        return aliases.get(value)
 
 
 class CallingFunction(BaseModel):

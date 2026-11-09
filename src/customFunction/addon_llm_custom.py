@@ -76,6 +76,16 @@ class LLmcustom(BaseModel):
                 print(f"\r{frame} {text}", end="\r", flush=True)
                 time.sleep(0.1)
 
+    def set_anwser_type(self, anwser: str, type: str) -> None:
+        if (is_float(anwser) and
+                ArgType(type) == ArgType.NUMBER):
+            return float(anwser)
+        elif (is_float(anwser) and
+                ArgType(type) == ArgType.INTEGER):
+            return int(anwser)
+        else:
+            return anwser
+
     def get_func(self, promt: CallingFunction) -> str | None:
         "gets the function name for the givin promt"
         des = f"user's request={promt.promt}\n"
@@ -141,6 +151,7 @@ class LLmcustom(BaseModel):
                     break
                 valid = [word for word in options if
                          word.startswith(self.model.decode(test))]
+                print(self.model.decode(test))
                 if (valid and
                     ((ArgType.NUMBER ==
                       ArgType(func.parameters[x]["type"].value) and
@@ -167,25 +178,15 @@ class LLmcustom(BaseModel):
                 result[x] = None
                 des += "None\n"
             elif len(valid) == 1:
-                if (is_float(self.model.decode(anwser)) and
-                   func.parameters[x]["type"].value == "number"):
-                    result[x] = float(valid[0])
-                elif (is_float(valid[0]) and
-                      func.parameters[x]["type"].value == "integer"):
-                    result[x] = int(valid[0])
-                else:
-                    result[x] = valid[0]
-                des += f"{valid[0]}\n"
+                result[x] = self.set_anwser_type(valid[0],
+                                                 func.parameters[x]
+                                                 ["type"].value)
+                des += f"{result[x]}\n"
             else:
-                if (is_float(self.model.decode(anwser)) and
-                   func.parameters[x]["type"].value == "number"):
-                    result[x] = float(self.model.decode(anwser))
-                elif (is_float(self.model.decode(anwser)) and
-                      func.parameters[x]["type"].value == "integer"):
-                    result[x] = int(self.model.decode(anwser))
-                else:
-                    result[x] = self.model.decode(anwser)
-                des += f"{self.model.decode(anwser)}\n"
+                result[x] = self.set_anwser_type(self.model.decode(anwser),
+                                                 func.parameters[x]
+                                                 ["type"].value)
+                des += f"{result[x]}\n"
         return result
 
     def get_ouput(self, promt: CallingFunction) -> OutputFunction:
