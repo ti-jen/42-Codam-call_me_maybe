@@ -18,7 +18,10 @@ class ArgType(Enum):
             "list": cls.STRING,
             "int": cls.INTEGER,
         }
-        return aliases.get(value)
+        if isinstance(value, str):
+            return aliases.get(value)
+
+        return None
 
 
 class CallingFunction(BaseModel):

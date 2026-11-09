@@ -14,15 +14,13 @@ additions = [
     (['colons, colon'], ':'),
     (['dots, dot'], '.'),
     (['vowel', 'vowels'], '([aeiouAEIOU])'),
-    (['numb', 'number', 'numbers'], '([0123456789])'),
+    (['numb', 'number', 'numbers', 'digits'], '([0123456789])'),
     (['char', 'character', 'characters', 'letters'], '([a-zA-Z])'),
     (['uppercase', 'uppercases', 'upper'], '([A-Z])'),
     (['lowercase', 'lowercases', 'lower'], '([a-z])'),
     (['underscores', 'underscore'], '_'),
     (['consonant', 'consonants'],
-     '([bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ])'),
-    (['punctuation', 'punctuations', 'punctuation marks'],
-     '([!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~])')
+     '([bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ])')
 ]
 
 
@@ -45,13 +43,12 @@ def is_float(str: str) -> bool:
 
 def split_line(str: str) -> list[str]:
     "splits the line in a list that the llm can choose from as  the paramter"
-    base = re.split(r'[ ,.]+', str)
+    base = [x for x in re.split(r'[ ,.]+', str) if not is_float(x)]
     resultA = re.findall(r'"(.*?)"', str)
     resultB = re.findall(r"'(.*?)'", str)
-    numbers = re.findall(r'-?\d*\.?\d+', str)
-    base.extend(resultA)
-    base.extend(resultB)
-    base.extend(numbers)
+    resultC = [item.strip() for item in str.split(':')]
+    numbers = re.findall(r'-?\d*[.,]?\d+', str)
+    base += resultA + resultB + resultC
     for x in "'\"":
         for p in range(len(base)):
             base[p] = base[p].replace(x, "")
@@ -59,7 +56,7 @@ def split_line(str: str) -> list[str]:
         for keyword in keywords:
             if keyword in base:
                 base.append(patern)
-    return list(dict.fromkeys(base))
+    return list(dict.fromkeys(base)) + numbers
 
 
 class LLmcustom(BaseModel):
@@ -76,7 +73,7 @@ class LLmcustom(BaseModel):
                 print(f"\r{frame} {text}", end="\r", flush=True)
                 time.sleep(0.1)
 
-    def set_anwser_type(self, anwser: str, type: str) -> None:
+    def set_anwser_type(self, anwser: str, type: str) -> float | int | str:
         if (is_float(anwser) and
                 ArgType(type) == ArgType.NUMBER):
             return float(anwser)
@@ -144,26 +141,25 @@ class LLmcustom(BaseModel):
             wrongs = 0
             while wrongs < 500:
                 next_id = max(range(len(logits)), key=lambda i: logits[i])
-                test = anwser.copy()
-                test.append(next_id)
+                test = self.model.decode(anwser + [next_id])
+                test = test.lstrip()
                 if (len(self.model.decode(anwser)) != 0 and
                         "\n" in self.model.decode(next_id)):
                     break
                 valid = [word for word in options if
-                         word.startswith(self.model.decode(test))]
-                print(self.model.decode(test))
-                if (valid and
+                         word.startswith(test)]
+                if (valid and len(test) != 0 and
                     ((ArgType.NUMBER ==
                       ArgType(func.parameters[x]["type"].value) and
-                      is_float(self.model.decode(test))
+                      is_float(test)
                       ) or
                      (ArgType.STRING ==
                       ArgType(func.parameters[x]["type"].value) and not
-                     is_float(self.model.decode(test))
+                     is_float(test)
                       ) or
                      (ArgType.INTEGER ==
                       ArgType(func.parameters[x]["type"].value) and
-                     is_float(self.model.decode(test))
+                     is_float(test)
                       )
                      )):
                     input_ids.append(next_id)
@@ -181,6 +177,7 @@ class LLmcustom(BaseModel):
                 result[x] = self.set_anwser_type(valid[0],
                                                  func.parameters[x]
                                                  ["type"].value)
+                options.remove(valid[0])
                 des += f"{result[x]}\n"
             else:
                 result[x] = self.set_anwser_type(self.model.decode(anwser),
