@@ -27,6 +27,9 @@ llm-sdk = { workspace = true }
 
 [tool.mypy]
 explicit_package_bases = true
+
+mypy_path = "typing"
+
 exclude = [
     "llm_sdk/",
     "moulinette/",

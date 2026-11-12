@@ -1,6 +1,7 @@
-from llm_sdk import Small_LLM_Model  # type: ignore[attr-defined]
+from llm_sdk import Small_LLM_Model
 from pydantic import BaseModel, ConfigDict
 from .json_convert import DefinedFunction, CallingFunction, ArgType
+from torch import tensor
 from typing import Any
 import time
 import threading
@@ -105,7 +106,7 @@ class LLmcustom(BaseModel):
                 if self.func_def[p].name.startswith(self.model.decode(test)):
                     valid = True
                     break
-            if self.model.decode(next_id) == "\n":
+            if self.model.decode(tensor(next_id)) == "\n":
                 break
             if not valid:
                 wrongs += 1
@@ -114,11 +115,11 @@ class LLmcustom(BaseModel):
                 input_ids.append(next_id)
                 anwser.append(next_id)
                 logits = self.model.get_logits_from_input_ids(input_ids)
-            if len(self.model.decode(next_id)) == 0:
+            if len(self.model.decode(tensor(next_id))) == 0:
                 break
         if wrongs >= 500:
             return None
-        return str(self.model.decode(anwser))
+        return str(self.model.decode(tensor(anwser)))
 
     def get_par(self, promt: CallingFunction,
                 func: DefinedFunction) -> dict[str, str]:
@@ -144,7 +145,7 @@ class LLmcustom(BaseModel):
                 test = self.model.decode(anwser + [next_id])
                 test = test.lstrip()
                 if (len(self.model.decode(anwser)) != 0 and
-                        "\n" in self.model.decode(next_id)):
+                        "\n" in self.model.decode(tensor(next_id))):
                     break
                 valid = [word for word in options if
                          word.startswith(test)]

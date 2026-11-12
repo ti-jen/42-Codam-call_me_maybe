@@ -1,5 +1,32 @@
 [
   {
+    "name": "fn_item_amount",
+    "description": "returns how many times the items is in the giving type.",
+    "parameters": {
+      "item": {
+        "type": "string"
+      },
+      "type": {
+        "type": "string"
+      }
+    },
+    "returns": {
+      "type": "number"
+    }
+  },
+  {
+    "name": "fn_story_generator",
+    "description": "writes a small story about the giving subject",
+    "parameters": {
+      "subject": {
+        "type": "string"
+      }
+    },
+    "returns": {
+      "type": "string"
+    }
+  },
+  {
     "name": "fn_add_numbers",
     "description": "Add two numbers together and return their sum.",
     "parameters": {
